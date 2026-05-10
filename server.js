@@ -71,23 +71,39 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ── PUBLIC: Serve PowerShell script ─────────────────────────────────
-app.get('/get', (req, res) => {
+// ── PUBLIC: Serve PowerShell script (PROTECTED) ─────────────────────────────────
+app.get('/bd-init-v2', (req, res) => {
+  // ตรวจสอบ header ลับ — ถ้าไม่มีหรือผิด ให้ส่ง 404 ธรรมดา
+  const clientSecret = req.headers['x-babydek-client'];
+  const expectedSecret = process.env.CLIENT_SECRET || 'babydek-secret-2025';
+
+  if (clientSecret !== expectedSecret) {
+    return res.status(404).type('text/plain').send('Not Found');
+  }
+
   const scriptPath = path.join(__dirname, 'BabyDek.ps1');
-  
+
   if (!fs.existsSync(scriptPath)) {
     console.error('❌ BabyDek.ps1 not found at:', scriptPath);
     return res.status(404).type('text/plain').send('# Script not found\nPlease contact admin');
   }
 
-  console.log('✅ Serving BabyDek.ps1 to client');
+  console.log('✅ Serving BabyDek.ps1 to authorized client');
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.sendFile(scriptPath);
 });
 
-// ── PUBLIC: Verify key ─────────────────────────────────────────────
+// ── PUBLIC: Verify key (PROTECTED) ─────────────────────────────────────────────
 app.post('/api/verify', async (req, res) => {
+  // ตรวจสอบ header ลับ
+  const clientSecret = req.headers['x-babydek-client'];
+  const expectedSecret = process.env.CLIENT_SECRET || 'babydek-secret-2025';
+
+  if (clientSecret !== expectedSecret) {
+    return res.status(404).json({ valid: false, reason: 'Not Found' });
+  }
+
   const { key, hwid } = req.body;
   if (!key) return res.status(400).json({ valid: false, reason: 'No key provided' });
 
@@ -191,7 +207,7 @@ app.patch('/api/admin/keys/:key/reset-hwid', requireAdmin, async (req, res) => {
 // ── Start Server ─────────────────────────────────────────────
 app.listen(PORT, async () => {
   console.log(`🚀 BabyDek Key Server running on port ${PORT}`);
-  console.log(`📥 Script URL: http://localhost:${PORT}/get`);
+  console.log(`📥 Script URL: http://localhost:${PORT}/bd-init-v2`);
   console.log(`🔧 Admin: http://localhost:${PORT}/admin.html`);
 
   try {
