@@ -1,159 +1,8 @@
-﻿Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
-# ===================== GLOBAL ERROR HANDLER =====================
-[System.Windows.Forms.Application]::SetUnhandledExceptionMode([System.Windows.Forms.UnhandledExceptionMode]::CatchException)
-[System.Windows.Forms.Application]::add_ThreadException({
-    param($sender, $e)
-    [System.Windows.Forms.MessageBox]::Show(
-        "Unexpected error:`n$($e.Exception.Message)",
-        "BabyDek Error",
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Error
-    ) | Out-Null
-})
-$ErrorActionPreference = "SilentlyContinue"
-
-# ===================== AUTO-ELEVATE (UAC) =====================
-# Supports both: direct run AND iwr -useb URL | iex  /  irm URL | iex
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    $scriptContent = $MyInvocation.MyCommand.ScriptBlock
-    if ($scriptContent) {
-        # Invoked via iex/pipe — save to temp file then re-launch elevated
-        $tmp = [System.IO.Path]::GetTempFileName() -replace '\.tmp$', '.ps1'
-        $scriptContent | Out-File -FilePath $tmp -Encoding UTF8
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tmp`"" -Verb RunAs
-    } else {
-        # Invoked directly from file
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`"" -Verb RunAs
-    }
-    exit
-}
-
-# ===================== ANTI-DEBUG =====================
-function Invoke-AntiDebug {
-
-    # 1) Debugger attached via .NET
-    if ([System.Diagnostics.Debugger]::IsAttached) {
-        [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-    }
-
-    # 2) Known debugger/analysis process names
-    $badProcs = @(
-        "x64dbg","x32dbg","ollydbg","windbg","idaq","idaq64",
-        "idag","idag64","idaw","idaw64","idat","idat64",
-        "scylla","scylla_x64","scylla_x86",
-        "processhacker","procmon","procmon64","procexp","procexp64",
-        "wireshark","fiddler","fiddler everywhere",
-        "dnspy","de4dot","ilspy","dotpeek","justdecompile",
-        "cheatengine","cheatengine-x86_64","cheatengine-i386",
-        "peid","exeinfope","lordpe","pestudio",
-        "httpdebugger","httpdebuggerui",
-        "charles","mitmproxy","burpsuite",
-        "regmon","filemon","tcpview","autoruns",
-        "rohitab","apimonitor",
-        "python","python3","pythonw",          # script analysers
-        "powershell_ise"                        # ISE debugger
-    )
-    foreach ($p in $badProcs) {
-        if (Get-Process -Name $p -ErrorAction SilentlyContinue) {
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-    }
-
-    # 3) Sandbox / VM detection via known MAC OUI prefixes
-    $vmMacs = @("00:05:69","00:0C:29","00:50:56","00:1C:14",  # VMware
-                "08:00:27","0A:00:27",                          # VirtualBox
-                "00:03:FF","00:15:5D",                          # Hyper-V / Azure
-                "00:16:E3",                                      # Xen
-                "00:1C:42")                                      # Parallels
-    $macs = (Get-WmiObject Win32_NetworkAdapterConfiguration -ErrorAction SilentlyContinue |
-             Where-Object { $_.MACAddress } |
-             Select-Object -ExpandProperty MACAddress)
-    foreach ($mac in $macs) {
-        $prefix = ($mac -replace '-',':').Substring(0,8).ToUpper()
-        foreach ($vm in $vmMacs) {
-            if ($prefix -eq $vm.ToUpper()) {
-                [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-            }
-        }
-    }
-
-    # 4) Sandbox via known VM registry artifacts
-    $vmRegChecks = @(
-        "HKLM:\SOFTWARE\VMware, Inc.\VMware Tools",
-        "HKLM:\SOFTWARE\Oracle\VirtualBox Guest Additions",
-        "HKLM:\SOFTWARE\Microsoft\Virtual Machine\Guest\Parameters",
-        "HKLM:\SYSTEM\CurrentControlSet\Services\VBoxGuest",
-        "HKLM:\SYSTEM\CurrentControlSet\Services\vmhgfs",
-        "HKLM:\SYSTEM\CurrentControlSet\Services\vmmouse",
-        "HKLM:\HARDWARE\ACPI\DSDT\VBOX__"
-    )
-    foreach ($reg in $vmRegChecks) {
-        if (Test-Path $reg) {
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-    }
-
-    # 5) Timing check — debuggers slow execution measurably
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    Start-Sleep -Milliseconds 1
-    $sw.Stop()
-    if ($sw.ElapsedMilliseconds -gt 500) {
-        [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-    }
-
-    # 6) CheckRemoteDebuggerPresent via kernel32
-    try {
-        $sig = @'
-[DllImport("kernel32.dll", SetLastError=true)]
-public static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, ref bool isDebuggerPresent);
-[DllImport("kernel32.dll")]
-public static extern bool IsDebuggerPresent();
-'@
-        $k32 = Add-Type -MemberDefinition $sig -Name "K32AD" -Namespace "NativeDebug" -PassThru -ErrorAction Stop
-        # IsDebuggerPresent (WinAPI)
-        if ($k32::IsDebuggerPresent()) {
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-        # CheckRemoteDebuggerPresent
-        $remoteDbg = $false
-        $k32::CheckRemoteDebuggerPresent(
-            [System.Diagnostics.Process]::GetCurrentProcess().Handle,
-            [ref]$remoteDbg
-        ) | Out-Null
-        if ($remoteDbg) {
-            [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-        }
-    } catch { }
-
-    # 7) Suspicious parent process check (launched from debugger host)
-    try {
-        $badParents = @("x64dbg","x32dbg","ollydbg","windbg","idaq64","idaq",
-                        "dnspy","cheatengine-x86_64","processhacker","powershell_ise")
-        $myPid     = [System.Diagnostics.Process]::GetCurrentProcess().Id
-        $wmiProc   = Get-WmiObject Win32_Process -Filter "ProcessId=$myPid" -ErrorAction SilentlyContinue
-        if ($wmiProc) {
-            $parentId   = $wmiProc.ParentProcessId
-            $parentProc = Get-Process -Id $parentId -ErrorAction SilentlyContinue
-            if ($parentProc -and ($badParents -contains $parentProc.ProcessName.ToLower())) {
-                [System.Diagnostics.Process]::GetCurrentProcess().Kill()
-            }
-        }
-    } catch { }
-}
-
-# Run anti-debug immediately and also re-check every 8 seconds
-# Invoke-AntiDebug  # DISABLED
-# $adTimer = New-Object System.Windows.Forms.Timer
-# $adTimer.Interval = 8000
-# $adTimer.Add_Tick({ Invoke-AntiDebug })
-# $adTimer.Start()
-
-# ===================== KEY SERVER CONFIG =====================
-# !! แก้ URL นี้ให้ตรงกับ server ของคุณ !!
-$KEY_SERVER_URL = "https://YOUR-APP.up.railway.app/api/verify"
-# ตัวอย่าง: "https://yourdomain.com/api/verify"
+# ===================== CONFIG =====================
+$KEY_SERVER_URL = "https://api-production-219.up.railway.app/api/verify"
 
 # ===================== HWID =====================
 function Get-HWID {
@@ -164,180 +13,129 @@ function Get-HWID {
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($raw)
         $hash  = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
         return ([BitConverter]::ToString($hash) -replace '-','').Substring(0,16)
-    } catch { return "UNKNOWN" }
+    } catch { return "UNKNOWN-$(Get-Random)" }
 }
 
 $HWID = Get-HWID
 
-# ===================== KEY VERIFICATION FORM =====================
-$kBG      = [System.Drawing.Color]::FromArgb(8, 6, 12)
-$kBG2     = [System.Drawing.Color]::FromArgb(15, 11, 22)
-$kACCENT  = [System.Drawing.Color]::FromArgb(255, 110, 185)
-$kACCENT2 = [System.Drawing.Color]::FromArgb(180, 110, 255)
-$kGOLD    = [System.Drawing.Color]::FromArgb(255, 200, 110)
-$kTEXT    = [System.Drawing.Color]::FromArgb(235, 220, 248)
-$kDIM     = [System.Drawing.Color]::FromArgb(90, 65, 115)
-$kERR     = [System.Drawing.Color]::FromArgb(255, 60, 90)
-$kOK      = [System.Drawing.Color]::FromArgb(82, 255, 184)
+# ===================== LICENSE KEY FORM =====================
+$BG      = [System.Drawing.Color]::FromArgb(8,6,12)
+$ACCENT  = [System.Drawing.Color]::FromArgb(255,110,185)
+$GOLD    = [System.Drawing.Color]::FromArgb(255,200,110)
+$OK      = [System.Drawing.Color]::FromArgb(82,255,184)
+$ERR     = [System.Drawing.Color]::FromArgb(255,60,90)
 
 $keyForm = New-Object System.Windows.Forms.Form
-$keyForm.Text            = "BabyDek — License"
-$keyForm.Size            = New-Object System.Drawing.Size(480, 340)
+$keyForm.Text            = "BabyDek — License Activation"
+$keyForm.Size            = New-Object System.Drawing.Size(520, 380)
 $keyForm.StartPosition   = "CenterScreen"
-$keyForm.BackColor       = $kBG
-$keyForm.ForeColor       = $kTEXT
+$keyForm.BackColor       = $BG
+$keyForm.ForeColor       = [System.Drawing.Color]::White
 $keyForm.FormBorderStyle = "None"
 $keyForm.TopMost         = $true
 
-# Drag
-$script:_kDrag = $false; $script:_kDragStart = [System.Drawing.Point]::Empty
-$keyForm.Add_MouseDown({ if ($_.Button -eq [System.Windows.Forms.MouseButtons]::Left) { $script:_kDrag = $true; $script:_kDragStart = $_.Location } })
-$keyForm.Add_MouseMove({ if ($script:_kDrag) { $keyForm.Left += $_.X - $script:_kDragStart.X; $keyForm.Top += $_.Y - $script:_kDragStart.Y } })
-$keyForm.Add_MouseUp({ $script:_kDrag = $false })
+# Drag Window
+$script:drag = $false; $script:dragStart = $null
+$keyForm.Add_MouseDown({ $script:drag=$true; $script:dragStart=$_.Location })
+$keyForm.Add_MouseMove({ if($script:drag){ $keyForm.Left += $_.X - $script:dragStart.X; $keyForm.Top += $_.Y - $script:dragStart.Y } })
+$keyForm.Add_MouseUp({ $script:drag=$false })
 
-# Border paint
-$keyForm.Add_Paint({
-    $g = $_.Graphics
-    $fw = $keyForm.Width; $fh = $keyForm.Height
-    $p = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(120, 255, 110, 185), 1)
-    $g.DrawRectangle($p, 0, 0, $fw-1, $fh-1)
-    $p.Dispose()
-    $br = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new($fw,0), $kACCENT, $kGOLD)
-    $g.FillRectangle($br, 0, 0, $fw, 3); $br.Dispose()
-})
+# Close Button
+$closeBtn = New-Object System.Windows.Forms.Button
+$closeBtn.Text = "✕"; $closeBtn.Location = New-Object System.Drawing.Point(480,8)
+$closeBtn.Size = New-Object System.Drawing.Size(30,25); $closeBtn.FlatStyle = "Flat"
+$closeBtn.ForeColor = "Gray"; $closeBtn.Add_Click({exit})
+$keyForm.Controls.Add($closeBtn)
 
-# Close button
-$kClose = New-Object System.Windows.Forms.Button
-$kClose.Text = "✕"; $kClose.Location = New-Object System.Drawing.Point(440, 10)
-$kClose.Size = New-Object System.Drawing.Size(28, 24); $kClose.FlatStyle = "Flat"
-$kClose.FlatAppearance.BorderSize = 0
-$kClose.BackColor = [System.Drawing.Color]::Transparent; $kClose.ForeColor = $kDIM
-$kClose.Font = New-Object System.Drawing.Font("Segoe UI", 9); $kClose.Cursor = [System.Windows.Forms.Cursors]::Hand
-$kClose.Add_Click({ $keyForm.Close(); [System.Environment]::Exit(0) })
-$keyForm.Controls.Add($kClose)
+# Title
+$title = New-Object System.Windows.Forms.Label
+$title.Text = "BabyDek"; $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
+$title.ForeColor = $ACCENT; $title.Location = New-Object System.Drawing.Point(40,40); $title.AutoSize=$true
+$keyForm.Controls.Add($title)
 
-# Logo label
-$kLogo = New-Object System.Windows.Forms.Label
-$kLogo.Text = "BabyDek"; $kLogo.Font = New-Object System.Drawing.Font("Segoe UI", 22, [System.Drawing.FontStyle]::Bold)
-$kLogo.ForeColor = $kACCENT; $kLogo.Location = New-Object System.Drawing.Point(30, 30)
-$kLogo.AutoSize = $true; $keyForm.Controls.Add($kLogo)
+$sub = New-Object System.Windows.Forms.Label
+$sub.Text = "Enter your license key to continue"; $sub.Location = New-Object System.Drawing.Point(42,85)
+$sub.ForeColor = "LightGray"; $sub.AutoSize=$true
+$keyForm.Controls.Add($sub)
 
-$kSub = New-Object System.Windows.Forms.Label
-$kSub.Text = "Enter your license key to continue"; $kSub.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-$kSub.ForeColor = $kDIM; $kSub.Location = New-Object System.Drawing.Point(32, 74)
-$kSub.AutoSize = $true; $keyForm.Controls.Add($kSub)
+$keyInput = New-Object System.Windows.Forms.TextBox
+$keyInput.Location = New-Object System.Drawing.Point(40,130); $keyInput.Size = New-Object System.Drawing.Size(440,40)
+$keyInput.Font = New-Object System.Drawing.Font("Consolas",14,[System.Drawing.FontStyle]::Bold)
+$keyInput.BackColor = [System.Drawing.Color]::FromArgb(20,15,35); $keyInput.ForeColor = $GOLD
+$keyInput.Text = "BDEK-XXXX-XXXX-XXXX"
+$keyForm.Controls.Add($keyInput)
 
-# Separator line
-$kLine = New-Object System.Windows.Forms.Panel
-$kLine.Location = New-Object System.Drawing.Point(0, 100); $kLine.Size = New-Object System.Drawing.Size(480, 1)
-$kLine.BackColor = [System.Drawing.Color]::FromArgb(30, 255, 110, 185); $keyForm.Controls.Add($kLine)
+$status = New-Object System.Windows.Forms.Label
+$status.Location = New-Object System.Drawing.Point(42,185); $status.Size = New-Object System.Drawing.Size(440,50)
+$status.Font = New-Object System.Drawing.Font("Consolas",10)
+$keyForm.Controls.Add($status)
 
-# Key label
-$kLbl = New-Object System.Windows.Forms.Label
-$kLbl.Text = "LICENSE KEY"; $kLbl.Font = New-Object System.Drawing.Font("Consolas", 8, [System.Drawing.FontStyle]::Bold)
-$kLbl.ForeColor = $kDIM; $kLbl.Location = New-Object System.Drawing.Point(32, 120)
-$kLbl.AutoSize = $true; $keyForm.Controls.Add($kLbl)
+$verifyBtn = New-Object System.Windows.Forms.Button
+$verifyBtn.Text = "VERIFY KEY →"; $verifyBtn.Location = New-Object System.Drawing.Point(40,240)
+$verifyBtn.Size = New-Object System.Drawing.Size(440,50)
+$verifyBtn.Font = New-Object System.Drawing.Font("Segoe UI",11,[System.Drawing.FontStyle]::Bold)
+$verifyBtn.BackColor = $ACCENT; $verifyBtn.ForeColor = "Black"
+$keyForm.Controls.Add($verifyBtn)
 
-# Key input box
-$kInput = New-Object System.Windows.Forms.TextBox
-$kInput.Location = New-Object System.Drawing.Point(30, 138); $kInput.Size = New-Object System.Drawing.Size(420, 28)
-$kInput.BackColor = [System.Drawing.Color]::FromArgb(12, 8, 18); $kInput.ForeColor = $kGOLD
-$kInput.Font = New-Object System.Drawing.Font("Consolas", 12, [System.Drawing.FontStyle]::Bold)
-$kInput.BorderStyle = "FixedSingle"; $kInput.Text = "BDEK-XXXX-XXXX-XXXX"
-$kInput.ForeColor = $kDIM
-$kInput.Add_Enter({
-    if ($kInput.Text -eq "BDEK-XXXX-XXXX-XXXX") { $kInput.Text = ""; $kInput.ForeColor = $kGOLD }
-})
-$kInput.Add_Leave({
-    if ($kInput.Text -eq "") { $kInput.Text = "BDEK-XXXX-XXXX-XXXX"; $kInput.ForeColor = $kDIM }
-})
-$keyForm.Controls.Add($kInput)
+$hwidLbl = New-Object System.Windows.Forms.Label
+$hwidLbl.Text = "HWID: $($HWID.Substring(0,8))..."; $hwidLbl.Location = New-Object System.Drawing.Point(42,310)
+$hwidLbl.ForeColor = [System.Drawing.Color]::FromArgb(120,255,180,200)
+$keyForm.Controls.Add($hwidLbl)
 
-# Status label
-$kStatus = New-Object System.Windows.Forms.Label
-$kStatus.Text = ""; $kStatus.Font = New-Object System.Drawing.Font("Consolas", 9)
-$kStatus.ForeColor = $kDIM; $kStatus.Location = New-Object System.Drawing.Point(32, 175)
-$kStatus.Size = New-Object System.Drawing.Size(420, 18); $keyForm.Controls.Add($kStatus)
-
-# Verify button
-$kBtn = New-Object System.Windows.Forms.Button
-$kBtn.Text = "VERIFY KEY →"; $kBtn.Location = New-Object System.Drawing.Point(30, 205)
-$kBtn.Size = New-Object System.Drawing.Size(420, 38)
-$kBtn.FlatStyle = "Flat"; $kBtn.FlatAppearance.BorderSize = 1
-$kBtn.FlatAppearance.BorderColor = $kACCENT; $kBtn.BackColor = [System.Drawing.Color]::FromArgb(30, 255, 110, 185)
-$kBtn.ForeColor = $kACCENT; $kBtn.Font = New-Object System.Drawing.Font("Consolas", 11, [System.Drawing.FontStyle]::Bold)
-$kBtn.Cursor = [System.Windows.Forms.Cursors]::Hand
-
-$script:_keyVerified = $false
-
-$kBtn.Add_Click({
-    $inputKey = $kInput.Text.Trim().ToUpper()
-    if ($inputKey -eq "" -or $inputKey -eq "BDEK-XXXX-XXXX-XXXX") {
-        $kStatus.ForeColor = $kERR; $kStatus.Text = "✕  Please enter your key"; return
+$verifyBtn.Add_Click({
+    $key = $keyInput.Text.Trim().ToUpper()
+    if ($key.Length -lt 15) {
+        $status.ForeColor = $ERR; $status.Text = "✕ กรุณาใส่คีย์ที่ถูกต้อง"; return
     }
-    $kBtn.Enabled = $false; $kBtn.Text = "Verifying..."
-    $kStatus.ForeColor = $kDIM; $kStatus.Text = "◈  Connecting to server..."
+
+    $verifyBtn.Enabled = $false
+    $verifyBtn.Text = "กำลังตรวจสอบ..."
+    $status.ForeColor = "White"
+    $status.Text = "Connecting to server..."
 
     try {
-        $body = @{ key = $inputKey; hwid = $HWID } | ConvertTo-Json
-        $resp = Invoke-RestMethod -Uri $KEY_SERVER_URL -Method POST `
-            -ContentType "application/json" -Body $body -TimeoutSec 10 -ErrorAction Stop
+        $body = @{ key = $key; hwid = $HWID } | ConvertTo-Json
+        $resp = Invoke-RestMethod -Uri $KEY_SERVER_URL -Method Post -Body $body -ContentType "application/json" -TimeoutSec 15
 
         if ($resp.valid) {
-            $kStatus.ForeColor = $kOK
-            $kStatus.Text = "✓  Key valid" + $(if ($resp.label) { "  ·  $($resp.label)" } else { "" })
-            $kBtn.Text = "✓  VERIFIED"
-            $kBtn.ForeColor = $kOK; $kBtn.FlatAppearance.BorderColor = $kOK
-            $script:_keyVerified = $true
-            Start-Sleep -Milliseconds 900
-            $keyForm.DialogResult = [System.Windows.Forms.DialogResult]::OK
+            $status.ForeColor = $OK
+            $status.Text = "✓ Verified Successfully!"
+            Start-Sleep -Milliseconds 1000
+            $keyForm.DialogResult = "OK"
             $keyForm.Close()
         } else {
-            $kStatus.ForeColor = $kERR
-            $kStatus.Text = "✕  $($resp.reason)"
-            $kBtn.Text = "VERIFY KEY →"; $kBtn.Enabled = $true
+            $status.ForeColor = $ERR
+            $status.Text = "✕ $($resp.reason)"
+            $verifyBtn.Enabled = $true
+            $verifyBtn.Text = "VERIFY KEY →"
         }
     } catch {
-        $kStatus.ForeColor = $kERR
-        $kStatus.Text = "✕  Cannot reach server — check connection"
-        $kBtn.Text = "VERIFY KEY →"; $kBtn.Enabled = $true
+        $status.ForeColor = $ERR
+        $status.Text = "✕ Cannot connect to server"
+        $verifyBtn.Enabled = $true
+        $verifyBtn.Text = "VERIFY KEY →"
     }
 })
 
-# HWID info
-$kHwidLbl = New-Object System.Windows.Forms.Label
-$kHwidLbl.Text = "HWID: $($HWID.Substring(0,8))…"
-$kHwidLbl.Font = New-Object System.Drawing.Font("Consolas", 7)
-$kHwidLbl.ForeColor = [System.Drawing.Color]::FromArgb(40, 255, 110, 185)
-$kHwidLbl.Location = New-Object System.Drawing.Point(32, 270); $kHwidLbl.AutoSize = $true
-$keyForm.Controls.Add($kHwidLbl)
+$keyInput.Add_KeyDown({if($_.KeyCode -eq "Enter"){$verifyBtn.PerformClick()}})
 
-$keyForm.Controls.Add($kBtn)
+# แสดงหน้า License ก่อน
+if ($keyForm.ShowDialog() -ne "OK") { exit }
 
-# Also allow Enter key on input
-$kInput.Add_KeyDown({ if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Return) { $kBtn.PerformClick() } })
-
-# ── Show key form; exit if not verified ──
-$result = $keyForm.ShowDialog()
-if (-not $script:_keyVerified) {
-    [System.Environment]::Exit(0)
-}
-
+Write-Host "✅ License Verified!" -ForegroundColor Green
 
 # ===================== MAIN FORM - ROSE GOLD CYBER THEME =====================
-$TEXT     = [System.Drawing.Color]::FromArgb(235, 220, 248)
-$TEXTDIM  = [System.Drawing.Color]::FromArgb(90, 65, 115)
-$BG       = [System.Drawing.Color]::FromArgb(8, 6, 12)
-$BG2      = [System.Drawing.Color]::FromArgb(15, 11, 22)
-$BG3      = [System.Drawing.Color]::FromArgb(12, 8, 18)
-$ACCENT   = [System.Drawing.Color]::FromArgb(255, 110, 185)   # Hot Pink
-$ACCENT2  = [System.Drawing.Color]::FromArgb(180, 110, 255)   # Purple
-$ACCENT3  = [System.Drawing.Color]::FromArgb(255, 200, 110)   # Gold
-$ERR      = [System.Drawing.Color]::FromArgb(255, 60, 90)
-$WARN     = [System.Drawing.Color]::FromArgb(255, 180, 50)
+$TEXT = [System.Drawing.Color]::FromArgb(235, 220, 248)
+$TEXTDIM = [System.Drawing.Color]::FromArgb(90, 65, 115)
+$BG = [System.Drawing.Color]::FromArgb(8, 6, 12)
+$BG2 = [System.Drawing.Color]::FromArgb(15, 11, 22)
+$BG3 = [System.Drawing.Color]::FromArgb(12, 8, 18)
+$ACCENT = [System.Drawing.Color]::FromArgb(255, 110, 185)
+$ACCENT2 = [System.Drawing.Color]::FromArgb(180, 110, 255)
+$ACCENT3 = [System.Drawing.Color]::FromArgb(255, 200, 110)
+$ERR = [System.Drawing.Color]::FromArgb(255, 60, 90)
+$WARN = [System.Drawing.Color]::FromArgb(255, 180, 50)
 $DARKPINK = [System.Drawing.Color]::FromArgb(150, 60, 110)
-
 # ===================== FONTS =====================
 $FontTitle = New-Object System.Drawing.Font("Segoe UI",    20, [System.Drawing.FontStyle]::Bold)
 $FontSub   = New-Object System.Drawing.Font("Segoe UI",    9,  [System.Drawing.FontStyle]::Regular)
