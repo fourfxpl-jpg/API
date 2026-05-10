@@ -7,7 +7,11 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'babydek-admin-2025';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+const CLIENT_SECRET = process.env.CLIENT_SECRET || '';
+const SCRIPT_TOKEN_SECRET = process.env.SCRIPT_TOKEN_SECRET || CLIENT_SECRET;
+const SCRIPT_TOKEN_TTL_SECONDS = Number(process.env.SCRIPT_TOKEN_TTL_SECONDS || 45);
+const issuedScriptTokens = new Map();
 
 // ── MySQL Connection Pool ─────────────────────────────────────
 let pool = null;
@@ -63,21 +67,98 @@ async function getDB() {
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+function secureEquals(a, b) {
+  if (!a || !b) return false;
+  const aBuf = Buffer.from(String(a));
+  const bBuf = Buffer.from(String(b));
+  if (aBuf.length !== bBuf.length) return false;
+  return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function base64UrlEncode(value) {
+  return Buffer.from(value).toString('base64url');
+}
+
+function base64UrlDecode(value) {
+  return Buffer.from(value, 'base64url').toString('utf8');
+}
+
+function issueScriptToken() {
+  if (!SCRIPT_TOKEN_SECRET) return null;
+
+  const nonce = crypto.randomBytes(12).toString('hex');
+  const exp = Date.now() + SCRIPT_TOKEN_TTL_SECONDS * 1000;
+  const payloadRaw = JSON.stringify({ nonce, exp });
+  const payload = base64UrlEncode(payloadRaw);
+  const signature = crypto
+    .createHmac('sha256', SCRIPT_TOKEN_SECRET)
+    .update(payload)
+    .digest('base64url');
+
+  issuedScriptTokens.set(nonce, exp);
+  return `${payload}.${signature}`;
+}
+
+function validateAndConsumeScriptToken(token) {
+  if (!SCRIPT_TOKEN_SECRET || !token) return false;
+  const [payload, signature] = String(token).split('.');
+  if (!payload || !signature) return false;
+
+  const expectedSig = crypto
+    .createHmac('sha256', SCRIPT_TOKEN_SECRET)
+    .update(payload)
+    .digest('base64url');
+
+  if (!secureEquals(signature, expectedSig)) return false;
+
+  let decoded = null;
+  try {
+    decoded = JSON.parse(base64UrlDecode(payload));
+  } catch {
+    return false;
+  }
+
+  const { nonce, exp } = decoded || {};
+  if (!nonce || !exp || Date.now() > exp) return false;
+
+  const issuedExp = issuedScriptTokens.get(nonce);
+  if (!issuedExp || Date.now() > issuedExp) return false;
+
+  issuedScriptTokens.delete(nonce);
+  return true;
+}
+
+function pruneExpiredScriptTokens() {
+  const now = Date.now();
+  for (const [nonce, exp] of issuedScriptTokens.entries()) {
+    if (exp < now) {
+      issuedScriptTokens.delete(nonce);
+    }
+  }
+}
+
+setInterval(pruneExpiredScriptTokens, 60_000).unref();
+
 function requireAdmin(req, res, next) {
   const token = req.headers['x-admin-token'] || req.query.token;
-  if (token !== ADMIN_TOKEN) {
+  if (!ADMIN_TOKEN || !secureEquals(token, ADMIN_TOKEN)) {
     return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
+function requireClientSecret(req, res, next) {
+  const clientSecret = req.headers['x-babydek-client'];
+  if (!CLIENT_SECRET || !secureEquals(clientSecret, CLIENT_SECRET)) {
+    return res.status(404).json({ valid: false, reason: 'Not Found' });
   }
   next();
 }
 
 // ── PUBLIC: Serve PowerShell script (PROTECTED) ─────────────────────────────────
 app.get('/bd-init-v2', (req, res) => {
-  // ตรวจสอบ header ลับ — ถ้าไม่มีหรือผิด ให้ส่ง 404 ธรรมดา
-  const clientSecret = req.headers['x-babydek-client'];
-  const expectedSecret = process.env.CLIENT_SECRET || 'babydek-secret-2025';
-
-  if (clientSecret !== expectedSecret) {
+  const token = req.query.st;
+  if (!validateAndConsumeScriptToken(token)) {
     return res.status(404).type('text/plain').send('Not Found');
   }
 
@@ -99,16 +180,20 @@ app.get('/bd-init-v2', (req, res) => {
   res.send(base64Content);
 });
 
-// ── PUBLIC: Verify key (PROTECTED) ─────────────────────────────────────────────
-app.post('/api/verify', async (req, res) => {
-  // ตรวจสอบ header ลับ
-  const clientSecret = req.headers['x-babydek-client'];
-  const expectedSecret = process.env.CLIENT_SECRET || 'babydek-secret-2025';
-
-  if (clientSecret !== expectedSecret) {
-    return res.status(404).json({ valid: false, reason: 'Not Found' });
+app.post('/api/script-token', requireClientSecret, (req, res) => {
+  const token = issueScriptToken();
+  if (!token) {
+    return res.status(500).json({ ok: false, reason: 'Script token secret is missing' });
   }
+  res.json({
+    ok: true,
+    token,
+    expiresIn: SCRIPT_TOKEN_TTL_SECONDS,
+  });
+});
 
+// ── PUBLIC: Verify key (PROTECTED) ─────────────────────────────────────────────
+app.post('/api/verify', requireClientSecret, async (req, res) => {
   const { key, hwid } = req.body;
   if (!key) return res.status(400).json({ valid: false, reason: 'No key provided' });
 
@@ -214,6 +299,15 @@ app.listen(PORT, async () => {
   console.log(`🚀 BabyDek Key Server running on port ${PORT}`);
   console.log(`📥 Script URL: http://localhost:${PORT}/bd-init-v2`);
   console.log(`🔧 Admin: http://localhost:${PORT}/admin.html`);
+  if (!CLIENT_SECRET) {
+    console.warn('⚠️  CLIENT_SECRET is missing. Protected endpoints will be blocked.');
+  }
+  if (!ADMIN_TOKEN) {
+    console.warn('⚠️  ADMIN_TOKEN is missing. Admin endpoints will be blocked.');
+  }
+  if (!SCRIPT_TOKEN_SECRET) {
+    console.warn('⚠️  SCRIPT_TOKEN_SECRET is missing. Script token endpoint will fail.');
+  }
 
   try {
     await getDB();
