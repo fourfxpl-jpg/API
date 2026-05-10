@@ -1,29 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BabyDek — Key Admin</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
-
   :root {
-    --bg:       #08060c;
-    --bg2:      #0f0b16;
-    --bg3:      #1a1024;
-    --accent:   #ff6eb9;
-    --accent2:  #b46eff;
-    --gold:     #ffc86e;
-    --text:     #ebd cf8;
-    --text:     #ebdcf8;
-    --dim:      #5a4173;
-    --err:      #ff3c5a;
-    --ok:       #52ffb8;
-    --border:   rgba(255,110,185,0.15);
+    --bg: #08060c;
+    --bg2: #0f0b16;
+    --bg3: #1a1024;
+    --accent: #ff6eb9;
+    --accent2: #b46eff;
+    --gold: #ffc86e;
+    --text: #ebdcf8;
+    --dim: #5a4173;
+    --err: #ff3c5a;
+    --ok: #52ffb8;
+    --border: rgba(255,110,185,0.15);
   }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
   body {
     background: var(--bg);
     color: var(--text);
@@ -31,8 +27,6 @@
     min-height: 100vh;
     overflow-x: hidden;
   }
-
-  /* Animated background grid */
   body::before {
     content: '';
     position: fixed; inset: 0;
@@ -43,23 +37,18 @@
     pointer-events: none;
     z-index: 0;
   }
-
-  /* Top gradient bar */
   body::after {
     content: '';
     position: fixed; top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, var(--accent), var(--gold));
     z-index: 100;
   }
-
   .container {
-    max-width: 1100px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 24px 60px;
     position: relative; z-index: 1;
   }
-
-  /* ── Header ── */
   header {
     display: flex;
     align-items: center;
@@ -68,13 +57,6 @@
     border-bottom: 1px solid var(--border);
     margin-bottom: 32px;
   }
-
-  .logo {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-  }
-
   .logo h1 {
     font-family: 'Syne', sans-serif;
     font-weight: 800;
@@ -82,299 +64,183 @@
     color: var(--accent);
     letter-spacing: -0.5px;
   }
-
   .logo span {
     font-size: 11px;
     color: var(--dim);
     letter-spacing: 3px;
     text-transform: uppercase;
   }
-
-  /* ── Login overlay ── */
+  /* Login Overlay */
   #loginOverlay {
     position: fixed; inset: 0;
-    background: rgba(8,6,12,0.96);
+    background: rgba(8,6,12,0.97);
     display: flex; align-items: center; justify-content: center;
-    z-index: 999;
-    backdrop-filter: blur(8px);
+    z-index: 9999;
+    backdrop-filter: blur(10px);
   }
-
   .login-box {
     background: var(--bg2);
     border: 1px solid var(--accent);
-    padding: 40px 48px;
+    padding: 40px 50px;
     width: 380px;
+    border-radius: 8px;
     position: relative;
   }
-
   .login-box::before {
     content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
     background: linear-gradient(90deg, var(--accent), var(--accent2));
   }
-
   .login-box h2 {
     font-family: 'Syne', sans-serif;
-    font-size: 20px;
+    font-size: 24px;
     color: var(--accent);
+    text-align: center;
     margin-bottom: 8px;
   }
-
-  .login-box p {
-    font-size: 11px;
-    color: var(--dim);
-    margin-bottom: 28px;
-  }
-
-  /* ── Inputs ── */
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 10px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-
-  input[type=text], input[type=password], input[type=date] {
-    width: 100%;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 13px;
-    padding: 10px 14px;
-    outline: none;
-    transition: border-color .2s;
-  }
-  input:focus { border-color: var(--accent); }
-  input::placeholder { color: var(--dim); }
-
-  /* ── Buttons ── */
-  .btn {
-    font-family: 'Space Mono', monospace;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    padding: 10px 20px;
-    cursor: pointer;
-    border: none;
-    transition: all .15s;
-    text-transform: uppercase;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #000;
-    width: 100%;
-  }
-  .btn-primary:hover { background: #ff9ed4; }
-
-  .btn-sm {
-    font-size: 10px;
-    padding: 5px 12px;
-  }
-
-  .btn-ghost {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-  }
-  .btn-ghost:hover { background: rgba(255,110,185,.1); }
-
-  .btn-danger {
-    background: transparent;
-    color: var(--err);
-    border: 1px solid var(--err);
-  }
-  .btn-danger:hover { background: rgba(255,60,90,.1); }
-
-  .btn-ok {
-    background: transparent;
-    color: var(--ok);
-    border: 1px solid var(--ok);
-  }
-  .btn-ok:hover { background: rgba(82,255,184,.1); }
-
-  .btn-gold {
-    background: transparent;
-    color: var(--gold);
-    border: 1px solid var(--gold);
-  }
-  .btn-gold:hover { background: rgba(255,200,110,.1); }
-
-  /* ── Stats row ── */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .stat-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::before {
-    content: '';
-    position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
-    background: var(--accent);
-  }
-
-  .stat-card.s2::before { background: var(--accent2); }
-  .stat-card.s3::before { background: var(--ok); }
-  .stat-card.s4::before { background: var(--err); }
-
-  .stat-val {
-    font-family: 'Syne', sans-serif;
-    font-size: 32px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-    margin-bottom: 6px;
-  }
-
-  .stat-label {
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
     font-size: 10px;
     color: var(--dim);
     letter-spacing: 2px;
     text-transform: uppercase;
+    margin-bottom: 6px;
   }
+  input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  input:focus { border-color: var(--accent); outline: none; }
+  button {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+  button:hover { background: #ff9ed4; }
 
-  /* ── Create key panel ── */
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Create Panel */
   .create-panel {
     background: var(--bg2);
     border: 1px solid var(--border);
     padding: 24px;
     margin-bottom: 32px;
   }
-
   .panel-title {
     font-size: 11px;
     color: var(--accent);
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    margin-bottom: 16px;
   }
-
-  .panel-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
   .create-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 2fr 1fr auto;
     gap: 12px;
     align-items: end;
   }
 
-  /* ── Table ── */
+  /* Table */
   .table-wrap {
     background: var(--bg2);
     border: 1px solid var(--border);
     overflow: hidden;
   }
-
-  .table-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
   table { width: 100%; border-collapse: collapse; }
-
   thead th {
-    font-size: 9px;
-    letter-spacing: 2px;
+    background: var(--bg3);
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--dim);
-    padding: 12px 16px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg3);
   }
-
-  tbody tr {
-    border-bottom: 1px solid rgba(255,110,185,0.06);
-    transition: background .1s;
-  }
-  tbody tr:hover { background: rgba(255,110,185,0.04); }
-  tbody tr:last-child { border-bottom: none; }
-
   td {
-    padding: 12px 16px;
-    font-size: 12px;
-    vertical-align: middle;
-  }
-
-  .key-val {
+    padding: 14px 16px;
     font-size: 13px;
+    border-bottom: 1px solid rgba(255,110,185,0.08);
+  }
+  .key-val {
     color: var(--gold);
-    letter-spacing: 1px;
     cursor: pointer;
-    transition: color .15s;
+    font-family: monospace;
   }
-  .key-val:hover { color: #fff; }
-
   .badge {
-    display: inline-block;
-    font-size: 9px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border: 1px solid;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
   }
-  .badge-ok    { color: var(--ok);  border-color: var(--ok);  background: rgba(82,255,184,.08); }
-  .badge-err   { color: var(--err); border-color: var(--err); background: rgba(255,60,90,.08);  }
-  .badge-dim   { color: var(--dim); border-color: var(--dim); background: transparent; }
-
-  .actions { display: flex; gap: 6px; align-items: center; }
-
-  .dim-text { color: var(--dim); font-size: 11px; }
-
-  /* ── Toast ── */
+  .badge-ok { background: rgba(82,255,184,0.1); color: var(--ok); }
+  .badge-err { background: rgba(255,60,90,0.1); color: var(--err); }
+  .actions button {
+    font-size: 10px;
+    padding: 5px 10px;
+    margin: 0 2px;
+  }
   #toast {
-    position: fixed; bottom: 32px; right: 32px;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
     background: var(--bg2);
     border: 1px solid var(--accent);
-    color: var(--text);
-    font-size: 12px;
-    padding: 12px 20px;
-    transform: translateY(80px);
+    padding: 14px 20px;
+    border-radius: 6px;
+    z-index: 10000;
     opacity: 0;
-    transition: all .25s;
-    z-index: 999;
-    pointer-events: none;
+    transition: all 0.3s;
   }
-  #toast.show { transform: translateY(0); opacity: 1; }
-  #toast.err  { border-color: var(--err); color: var(--err); }
-
-  .search-wrap { position: relative; }
-  .search-wrap input { padding-left: 32px; }
-  .search-wrap::before { content: '⌕'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--dim); font-size: 16px; pointer-events: none; }
-
-  #emptyRow td { text-align: center; color: var(--dim); font-size: 12px; padding: 40px; }
+  #toast.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
 
-<!-- Login overlay -->
+<!-- Login Overlay -->
 <div id="loginOverlay">
   <div class="login-box">
     <h2>BabyDek Admin</h2>
-    <p>Enter your admin token to continue</p>
+    <p style="text-align:center; color:var(--dim); margin-bottom:24px;">Enter your admin token</p>
     <div class="field">
-      <label>Admin Token</label>
-      <input type="password" id="tokenInput" placeholder="••••••••••••" autocomplete="off">
+      <label>ADMIN TOKEN</label>
+      <input type="password" id="tokenInput" placeholder="babydek-admin-2025" autocomplete="off">
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">LOGIN →</button>
-    <p id="loginErr" style="color:var(--err);font-size:11px;margin-top:12px;min-height:16px;"></p>
+    <button onclick="doLogin()">LOGIN →</button>
+    <p id="loginErr" style="color:var(--err); text-align:center; margin-top:12px; min-height:20px;"></p>
   </div>
 </div>
 
@@ -384,72 +250,53 @@
       <h1>BabyDek</h1>
       <span>Key Management</span>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <span id="serverStatus" class="dim-text">● Connecting...</span>
-      <button class="btn btn-ghost btn-sm" onclick="refresh()">↻ REFRESH</button>
+    <div>
+      <span id="serverStatus" style="color:var(--dim);">● Disconnected</span>
+      <button onclick="refresh()" style="margin-left:15px; background:transparent; border:1px solid var(--accent); color:var(--accent); padding:6px 12px; font-size:12px;">REFRESH</button>
     </div>
   </header>
 
   <!-- Stats -->
   <div class="stats">
-    <div class="stat-card">
-      <div class="stat-val" id="statTotal">—</div>
-      <div class="stat-label">Total Keys</div>
-    </div>
-    <div class="stat-card s2">
-      <div class="stat-val" id="statActive">—</div>
-      <div class="stat-label">Active</div>
-    </div>
-    <div class="stat-card s3">
-      <div class="stat-val" id="statBound">—</div>
-      <div class="stat-label">Bound (HWID)</div>
-    </div>
-    <div class="stat-card s4">
-      <div class="stat-val" id="statRevoked">—</div>
-      <div class="stat-label">Revoked</div>
-    </div>
+    <div class="stat-card"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total Keys</div></div>
+    <div class="stat-card"><div class="stat-val" id="statActive">0</div><div class="stat-label">Active</div></div>
+    <div class="stat-card"><div class="stat-val" id="statBound">0</div><div class="stat-label">Bound HWID</div></div>
+    <div class="stat-card"><div class="stat-val" id="statRevoked">0</div><div class="stat-label">Revoked</div></div>
   </div>
 
-  <!-- Create key -->
+  <!-- Create New Key -->
   <div class="create-panel">
-    <div class="panel-title">✦ Create New Key</div>
+    <div class="panel-title">CREATE NEW KEY</div>
     <div class="create-row">
-      <div class="field" style="margin:0">
-        <label>Label / Note</label>
-        <input type="text" id="newLabel" placeholder="e.g. John Discord#1234">
+      <div class="field">
+        <label>LABEL / NOTE</label>
+        <input type="text" id="newLabel" placeholder="เช่น John Discord">
       </div>
-      <div class="field" style="margin:0">
-        <label>Expires (optional)</label>
+      <div class="field">
+        <label>EXPIRES (OPTIONAL)</label>
         <input type="date" id="newExpiry">
       </div>
-      <button class="btn btn-primary" style="width:auto" onclick="createKey()">+ GENERATE KEY</button>
+      <button onclick="createKey()">+ GENERATE</button>
     </div>
   </div>
 
-  <!-- Table -->
+  <!-- Keys Table -->
   <div class="table-wrap">
-    <div class="table-header">
-      <div class="panel-title" style="margin:0">✦ Keys</div>
-      <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Search key or label..." style="width:240px" oninput="filterTable()">
-      </div>
-    </div>
+    <div class="panel-title" style="padding:16px 20px; border-bottom:1px solid var(--border);">ALL KEYS</div>
     <table>
       <thead>
         <tr>
-          <th>Key</th>
-          <th>Label</th>
-          <th>Status</th>
+          <th>KEY</th>
+          <th>LABEL</th>
+          <th>STATUS</th>
           <th>HWID</th>
-          <th>Uses</th>
-          <th>Expires</th>
-          <th>Last Used</th>
-          <th>Actions</th>
+          <th>USES</th>
+          <th>EXPIRES</th>
+          <th>LAST USED</th>
+          <th>ACTIONS</th>
         </tr>
       </thead>
-      <tbody id="keyTable">
-        <tr id="emptyRow"><td colspan="8">No keys yet. Create one above.</td></tr>
-      </tbody>
+      <tbody id="keyTable"></tbody>
     </table>
   </div>
 </div>
@@ -460,156 +307,155 @@
 let ADMIN_TOKEN = '';
 let allKeys = [];
 
-// ── Login ──
-function doLogin() {
-  const t = document.getElementById('tokenInput').value.trim();
-  if (!t) return;
-  ADMIN_TOKEN = t;
-  fetch('/api/admin/keys', { headers: { 'x-admin-token': t } })
-    .then(r => {
-      if (!r.ok) throw new Error('bad token');
-      return r.json();
-    })
-    .then(() => {
-      document.getElementById('loginOverlay').style.display = 'none';
-      document.getElementById('serverStatus').textContent = '● Connected';
-      document.getElementById('serverStatus').style.color = 'var(--ok)';
-      refresh();
-    })
-    .catch(() => {
-      document.getElementById('loginErr').textContent = '✕ Invalid token';
-    });
-}
-document.getElementById('tokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+// Login
+async function doLogin() {
+  const token = document.getElementById('tokenInput').value.trim();
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
 
-// ── Fetch & render ──
-function refresh() {
-  fetch('/api/admin/keys', { headers: { 'x-admin-token': ADMIN_TOKEN } })
-    .then(r => r.json())
-    .then(keys => {
-      allKeys = keys;
-      updateStats(keys);
-      renderTable(keys);
+  if (!token) {
+    errEl.textContent = 'กรุณาใส่ Admin Token';
+    return;
+  }
+
+  ADMIN_TOKEN = token;
+
+  try {
+    const res = await fetch('/api/admin/keys', {
+      headers: { 'x-admin-token': token }
     });
+
+    if (res.status === 401) {
+      errEl.textContent = '✕ Invalid Token';
+      return;
+    }
+    if (!res.ok) throw new Error();
+
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('serverStatus').textContent = '● Connected';
+    document.getElementById('serverStatus').style.color = 'var(--ok)';
+    
+    refresh();
+  } catch (e) {
+    errEl.textContent = '✕ Connection Error';
+  }
+}
+
+// Refresh Data
+async function refresh() {
+  try {
+    const res = await fetch('/api/admin/keys', {
+      headers: { 'x-admin-token': ADMIN_TOKEN }
+    });
+    if (!res.ok) throw new Error();
+    const keys = await res.json();
+    allKeys = keys;
+    renderTable(keys);
+    updateStats(keys);
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 function updateStats(keys) {
-  document.getElementById('statTotal').textContent   = keys.length;
-  document.getElementById('statActive').textContent  = keys.filter(k => k.active).length;
-  document.getElementById('statBound').textContent   = keys.filter(k => k.hwid).length;
+  document.getElementById('statTotal').textContent = keys.length;
+  document.getElementById('statActive').textContent = keys.filter(k => k.active).length;
+  document.getElementById('statBound').textContent = keys.filter(k => k.hwid).length;
   document.getElementById('statRevoked').textContent = keys.filter(k => !k.active).length;
 }
 
 function renderTable(keys) {
   const tbody = document.getElementById('keyTable');
-  if (!keys.length) {
-    tbody.innerHTML = '<tr id="emptyRow"><td colspan="8">No keys yet.</td></tr>';
+  if (!keys || keys.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:60px; color:var(--dim);">ยังไม่มีคีย์ กรุณาสร้างใหม่</td></tr>`;
     return;
   }
-  tbody.innerHTML = [...keys].reverse().map(k => {
-    const expired = k.expiresAt && new Date() > new Date(k.expiresAt);
-    const status  = !k.active ? `<span class="badge badge-err">REVOKED</span>`
-                  : expired   ? `<span class="badge badge-dim">EXPIRED</span>`
-                              : `<span class="badge badge-ok">ACTIVE</span>`;
-    const hwid    = k.hwid
-      ? `<span style="color:var(--accent2);font-size:10px">${k.hwid.substring(0,16)}…</span>`
-      : `<span class="dim-text">—</span>`;
-    const exp     = k.expiresAt ? `<span style="${expired?'color:var(--err)':''}">${k.expiresAt.slice(0,10)}</span>` : '<span class="dim-text">∞</span>';
-    const last    = k.lastUsed ? timeSince(k.lastUsed) : '<span class="dim-text">Never</span>';
 
-    const revokeBtn = k.active
-      ? `<button class="btn btn-danger btn-sm" onclick="revokeKey('${k.key}')">REVOKE</button>`
-      : `<button class="btn btn-ok btn-sm" onclick="restoreKey('${k.key}')">RESTORE</button>`;
+  tbody.innerHTML = keys.map(k => {
+    const expired = k.expiresAt && new Date(k.expiresAt) < new Date();
+    const statusHTML = !k.active ? `<span class="badge badge-err">REVOKED</span>` :
+                       expired ? `<span class="badge badge-err">EXPIRED</span>` :
+                       `<span class="badge badge-ok">ACTIVE</span>`;
 
-    return `<tr>
-      <td><span class="key-val" onclick="copyKey('${k.key}')" title="Click to copy">${k.key}</span></td>
-      <td><span style="color:var(--text)">${k.label || '<span class=dim-text>—</span>'}</span></td>
-      <td>${status}</td>
-      <td>${hwid}</td>
-      <td>${k.uses || 0}</td>
-      <td>${exp}</td>
-      <td>${last}</td>
-      <td><div class="actions">
-        ${revokeBtn}
-        ${k.hwid ? `<button class="btn btn-gold btn-sm" onclick="resetHwid('${k.key}')">RESET HWID</button>` : ''}
-        <button class="btn btn-danger btn-sm" onclick="deleteKey('${k.key}')">✕</button>
-      </div></td>
-    </tr>`;
+    return `
+      <tr>
+        <td><span class="key-val" onclick="copyKey('${k.key}')">${k.key}</span></td>
+        <td>${k.label || '<span style="color:var(--dim)">—</span>'}</td>
+        <td>${statusHTML}</td>
+        <td>${k.hwid ? k.hwid.substring(0,12)+'...' : '<span style="color:var(--dim)">—</span>'}</td>
+        <td>${k.uses || 0}</td>
+        <td>${k.expiresAt ? k.expiresAt.slice(0,10) : '∞'}</td>
+        <td>${k.lastUsed ? new Date(k.lastUsed).toLocaleDateString('th-TH') : '—'}</td>
+        <td>
+          <button onclick="revokeKey('${k.key}')" style="background:#ff3c5a;color:white;">${k.active ? 'REVOKE' : 'RESTORE'}</button>
+          ${k.hwid ? `<button onclick="resetHwid('${k.key}')" style="background:#ffc86e;color:black;">RESET HWID</button>` : ''}
+          <button onclick="deleteKey('${k.key}')" style="background:#333;color:white;">DELETE</button>
+        </td>
+      </tr>`;
   }).join('');
 }
 
-function filterTable() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = allKeys.filter(k =>
-    k.key.toLowerCase().includes(q) ||
-    (k.label || '').toLowerCase().includes(q)
-  );
-  renderTable(filtered);
-}
-
-// ── Actions ──
-function createKey() {
-  const label    = document.getElementById('newLabel').value.trim();
+// Actions
+async function createKey() {
+  const label = document.getElementById('newLabel').value.trim();
   const expiresAt = document.getElementById('newExpiry').value || null;
-  fetch('/api/admin/keys', {
+
+  await fetch('/api/admin/keys', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-admin-token': ADMIN_TOKEN },
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-admin-token': ADMIN_TOKEN 
+    },
     body: JSON.stringify({ label, expiresAt })
-  })
-  .then(r => r.json())
-  .then(k => {
-    toast(`✓ Key created: ${k.key}`);
-    document.getElementById('newLabel').value  = '';
-    document.getElementById('newExpiry').value = '';
-    refresh();
   });
+  document.getElementById('newLabel').value = '';
+  refresh();
+  toast('สร้างคีย์สำเร็จ');
 }
 
-function revokeKey(key) {
-  fetch(`/api/admin/keys/${key}/revoke`, {
-    method: 'PATCH', headers: { 'x-admin-token': ADMIN_TOKEN }
-  }).then(() => { toast('Key revoked'); refresh(); });
+async function revokeKey(key) {
+  await fetch(`/api/admin/keys/${key}/revoke`, { 
+    method: 'PATCH', 
+    headers: { 'x-admin-token': ADMIN_TOKEN } 
+  });
+  refresh();
 }
 
-function restoreKey(key) {
-  fetch(`/api/admin/keys/${key}/restore`, {
-    method: 'PATCH', headers: { 'x-admin-token': ADMIN_TOKEN }
-  }).then(() => { toast('Key restored'); refresh(); });
+async function resetHwid(key) {
+  await fetch(`/api/admin/keys/${key}/reset-hwid`, { 
+    method: 'PATCH', 
+    headers: { 'x-admin-token': ADMIN_TOKEN } 
+  });
+  refresh();
+  toast('รีเซ็ต HWID สำเร็จ');
 }
 
-function deleteKey(key) {
-  if (!confirm(`Delete key ${key}?`)) return;
-  fetch(`/api/admin/keys/${key}`, {
-    method: 'DELETE', headers: { 'x-admin-token': ADMIN_TOKEN }
-  }).then(() => { toast('Key deleted', true); refresh(); });
-}
-
-function resetHwid(key) {
-  fetch(`/api/admin/keys/${key}/reset-hwid`, {
-    method: 'PATCH', headers: { 'x-admin-token': ADMIN_TOKEN }
-  }).then(() => { toast('HWID reset — key can be used on new machine'); refresh(); });
+async function deleteKey(key) {
+  if (confirm(`ลบคีย์ ${key} ถาวร?`)) {
+    await fetch(`/api/admin/keys/${key}`, { 
+      method: 'DELETE', 
+      headers: { 'x-admin-token': ADMIN_TOKEN } 
+    });
+    refresh();
+  }
 }
 
 function copyKey(key) {
-  navigator.clipboard.writeText(key).then(() => toast(`Copied: ${key}`));
+  navigator.clipboard.writeText(key);
+  toast('คัดลอกคีย์แล้ว: ' + key);
 }
 
-// ── Toast ──
-function toast(msg, err = false) {
+function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.className   = 'show' + (err ? ' err' : '');
-  setTimeout(() => t.className = '', 2800);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ── Helpers ──
-function timeSince(iso) {
-  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (s < 60)   return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s/60)}m ago`;
-  if (s < 86400)return `${Math.floor(s/3600)}h ago`;
-  return `${Math.floor(s/86400)}d ago`;
-}
+// Enter key support
+document.getElementById('tokenInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') doLogin();
+});
 </script>
 </body>
 </html>
