@@ -368,7 +368,7 @@ function Set-Progress {
     try {
         $progressBar.Value = [Math]::Max(0, [Math]::Min($main, 100))
         $filled = [Math]::Floor($main / 10)
-        $lblProgress.Text  = "PROGRESS [$(('>' * $filled)('-' * (10 - $filled)))] $main%"
+        $lblProgress.Text  = "PROGRESS [$(('>' * $filled) + ('-' * (10 - $filled)))] $main%"
         [System.Windows.Forms.Application]::DoEvents()
     } catch { }
 }
