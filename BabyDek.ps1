@@ -3,6 +3,8 @@ Add-Type -AssemblyName System.Drawing
 
 # ===================== CONFIG =====================
 $KEY_SERVER_URL = "https://api-production-2119.up.railway.app/api/verify"
+$SCRIPT_URL     = "https://api-production-2119.up.railway.app/bd-init-v2"
+$CLIENT_SECRET  = "babydek-secret-2025"
 
 # ===================== HWID =====================
 function Get-HWID {
@@ -26,7 +28,7 @@ $OK = [System.Drawing.Color]::FromArgb(82,255,184)
 $ERR = [System.Drawing.Color]::FromArgb(255,60,90)
 
 $keyForm = New-Object System.Windows.Forms.Form
-$keyForm.Text = "BabyDek — License Activation"
+$keyForm.Text = "BabyDek â€” License Activation"
 $keyForm.Size = New-Object System.Drawing.Size(520, 380)
 $keyForm.StartPosition = "CenterScreen"
 $keyForm.BackColor = $BG
@@ -42,7 +44,7 @@ $keyForm.Add_MouseUp({$script:drag=$false})
 
 # Close Button
 $closeBtn = New-Object System.Windows.Forms.Button
-$closeBtn.Text = "✕"; $closeBtn.Location = New-Object System.Drawing.Point(480,8)
+$closeBtn.Text = "âœ•"; $closeBtn.Location = New-Object System.Drawing.Point(480,8)
 $closeBtn.Size = New-Object System.Drawing.Size(30,25); $closeBtn.FlatStyle = "Flat"
 $closeBtn.ForeColor = "Gray"; $closeBtn.Add_Click({exit})
 $keyForm.Controls.Add($closeBtn)
@@ -71,7 +73,7 @@ $status.Font = New-Object System.Drawing.Font("Consolas",10)
 $keyForm.Controls.Add($status)
 
 $verifyBtn = New-Object System.Windows.Forms.Button
-$verifyBtn.Text = "VERIFY KEY →"; $verifyBtn.Location = New-Object System.Drawing.Point(40,240)
+$verifyBtn.Text = "VERIFY KEY â†’"; $verifyBtn.Location = New-Object System.Drawing.Point(40,240)
 $verifyBtn.Size = New-Object System.Drawing.Size(440,50)
 $verifyBtn.Font = New-Object System.Drawing.Font("Segoe UI",11,[System.Drawing.FontStyle]::Bold)
 $verifyBtn.BackColor = $ACCENT; $verifyBtn.ForeColor = "Black"
@@ -85,32 +87,36 @@ $keyForm.Controls.Add($hwidLbl)
 $verifyBtn.Add_Click({
     $key = $keyInput.Text.Trim().ToUpper()
     if ($key.Length -lt 15) {
-        $status.ForeColor = $ERR; $status.Text = "✕ กรุณาใส่คีย์ที่ถูกต้อง"; return
+        $status.ForeColor = $ERR; $status.Text = "âœ• à¸à¸£à¸¸à¸“à¸²à¹ƒà¸ªà¹ˆà¸„à¸µà¸¢à¹Œà¸—à¸µà¹ˆà¸–à¸¹à¸à¸•à¹‰à¸­à¸‡"; return
     }
     $verifyBtn.Enabled = $false
-    $verifyBtn.Text = "กำลังตรวจสอบ..."
+    $verifyBtn.Text = "à¸à¸³à¸¥à¸±à¸‡à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š..."
     $status.ForeColor = "White"
     $status.Text = "Connecting to server..."
     try {
         $body = @{ key = $key; hwid = $HWID } | ConvertTo-Json
-        $resp = Invoke-RestMethod -Uri $KEY_SERVER_URL -Method Post -Body $body -ContentType "application/json" -TimeoutSec 15
+        $headers = @{
+            "Content-Type" = "application/json"
+            "x-babydek-client" = $CLIENT_SECRET
+        }
+        $resp = Invoke-RestMethod -Uri $KEY_SERVER_URL -Method Post -Headers $headers -Body $body -TimeoutSec 15
         if ($resp.valid) {
             $status.ForeColor = $OK
-            $status.Text = "✓ Verified Successfully!"
+            $status.Text = "âœ“ Verified Successfully!"
             Start-Sleep -Milliseconds 1000
             $keyForm.DialogResult = "OK"
             $keyForm.Close()
         } else {
             $status.ForeColor = $ERR
-            $status.Text = "✕ $($resp.reason)"
+            $status.Text = "âœ• $($resp.reason)"
             $verifyBtn.Enabled = $true
-            $verifyBtn.Text = "VERIFY KEY →"
+            $verifyBtn.Text = "VERIFY KEY â†’"
         }
     } catch {
         $status.ForeColor = $ERR
-        $status.Text = "✕ Cannot connect to server"
+        $status.Text = "âœ• Cannot connect to server"
         $verifyBtn.Enabled = $true
-        $verifyBtn.Text = "VERIFY KEY →"
+        $verifyBtn.Text = "VERIFY KEY â†’"
     }
 })
 
@@ -118,7 +124,7 @@ $keyInput.Add_KeyDown({if($_.KeyCode -eq "Enter"){$verifyBtn.PerformClick()}})
 
 if ($keyForm.ShowDialog() -ne "OK") { exit }
 
-Write-Host "✅ License Verified Successfully!" -ForegroundColor Green
+Write-Host "âœ… License Verified Successfully!" -ForegroundColor Green
 
 # ===================== MAIN OPTIMIZER =====================
 $TEXT = [System.Drawing.Color]::FromArgb(235, 220, 248)
@@ -142,7 +148,7 @@ $FontSmall = New-Object System.Drawing.Font("Consolas", 7,  [System.Drawing.Font
 $FontStep  = New-Object System.Drawing.Font("Consolas", 9,  [System.Drawing.FontStyle]::Bold)
 $FontMono  = New-Object System.Drawing.Font("Consolas", 8,  [System.Drawing.FontStyle]::Bold)
 
-# Main Form (โค้ดที่เหลือทั้งหมดของคุณ)
+# Main Form (à¹‚à¸„à¹‰à¸”à¸—à¸µà¹ˆà¹€à¸«à¸¥à¸·à¸­à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”à¸‚à¸­à¸‡à¸„à¸¸à¸“)
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "BabyDek"
 $form.Size            = New-Object System.Drawing.Size(940, 700)
@@ -253,7 +259,7 @@ $lblVersion.AutoSize  = $true
 $headerPanel.Controls.Add($lblVersion)
 
 $lblSub = New-Object System.Windows.Forms.Label
-$lblSub.Text      = "◈  Missyou"
+$lblSub.Text      = "â—ˆ  Missyou"
 $lblSub.Font      = New-Object System.Drawing.Font("Segoe UI", 8)
 $lblSub.ForeColor = $TEXTDIM
 $lblSub.Location  = New-Object System.Drawing.Point(24, 52)
@@ -261,7 +267,7 @@ $lblSub.AutoSize  = $true
 $headerPanel.Controls.Add($lblSub)
 
 $lblStatus = New-Object System.Windows.Forms.Label
-$lblStatus.Text      = "◆ READY"
+$lblStatus.Text      = "â—† READY"
 $lblStatus.Font      = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
 $lblStatus.ForeColor = $ACCENT
 $lblStatus.Location  = New-Object System.Drawing.Point(780, 32)
@@ -270,7 +276,7 @@ $headerPanel.Controls.Add($lblStatus)
 
 # Window controls
 $btnWinClose = New-Object System.Windows.Forms.Button
-$btnWinClose.Text      = "✕"
+$btnWinClose.Text      = "âœ•"
 $btnWinClose.Location  = New-Object System.Drawing.Point(900, 10)
 $btnWinClose.Size      = New-Object System.Drawing.Size(30, 26)
 $btnWinClose.Font      = New-Object System.Drawing.Font("Segoe UI", 9)
@@ -314,7 +320,7 @@ $stepsPanel.Add_Paint({
 })
 
 $lblStepsTitle = New-Object System.Windows.Forms.Label
-$lblStepsTitle.Text      = "  ✦ STAGES"
+$lblStepsTitle.Text      = "  âœ¦ STAGES"
 $lblStepsTitle.Font      = New-Object System.Drawing.Font("Consolas", 7, [System.Drawing.FontStyle]::Bold)
 $lblStepsTitle.ForeColor = $ACCENT2
 $lblStepsTitle.Location  = New-Object System.Drawing.Point(6, 8)
@@ -380,7 +386,7 @@ $progressBg.Add_Paint({
 })
 
 $lblProgress = New-Object System.Windows.Forms.Label
-$lblProgress.Text      = "◈  PROGRESS   0%"
+$lblProgress.Text      = "â—ˆ  PROGRESS   0%"
 $lblProgress.Font      = New-Object System.Drawing.Font("Consolas", 7, [System.Drawing.FontStyle]::Bold)
 $lblProgress.ForeColor = $ACCENT2
 $lblProgress.Location  = New-Object System.Drawing.Point(8, 8)
@@ -421,7 +427,7 @@ $statsPanel.Add_Paint({
 })
 
 $lblStatsTitle = New-Object System.Windows.Forms.Label
-$lblStatsTitle.Text      = "  ✦ SYSTEM INFO"
+$lblStatsTitle.Text      = "  âœ¦ SYSTEM INFO"
 $lblStatsTitle.Font      = New-Object System.Drawing.Font("Consolas", 7, [System.Drawing.FontStyle]::Bold)
 $lblStatsTitle.ForeColor = $ACCENT2
 $lblStatsTitle.Location  = New-Object System.Drawing.Point(6, 8)
@@ -496,7 +502,7 @@ $logBg.Add_Paint({
 })
 
 $lblLogTitle = New-Object System.Windows.Forms.Label
-$lblLogTitle.Text      = "  ✦ OUTPUT LOG"
+$lblLogTitle.Text      = "  âœ¦ OUTPUT LOG"
 $lblLogTitle.Font      = New-Object System.Drawing.Font("Consolas", 7, [System.Drawing.FontStyle]::Bold)
 $lblLogTitle.ForeColor = $ACCENT
 $lblLogTitle.Location  = New-Object System.Drawing.Point(6, 8)
@@ -564,14 +570,14 @@ function New-FlatButton {
     return $b
 }
 
-$btnRun   = New-FlatButton "▶  RUN BabyDek" 0 0 252 62 $ACCENT
+$btnRun   = New-FlatButton "â–¶  RUN BabyDek" 0 0 252 62 $ACCENT
 $btnRun.Font = New-Object System.Drawing.Font("Segoe UI", 12, [System.Drawing.FontStyle]::Bold)
 $btnPanel.Controls.Add($btnRun)
 
-$btnClear = New-FlatButton "⟳  CLEAR"  0 70 122 38 $TEXTDIM
+$btnClear = New-FlatButton "âŸ³  CLEAR"  0 70 122 38 $TEXTDIM
 $btnPanel.Controls.Add($btnClear)
 
-$btnExit  = New-FlatButton "✕  EXIT"   130 70 122 38 $ERR
+$btnExit  = New-FlatButton "âœ•  EXIT"   130 70 122 38 $ERR
 $btnPanel.Controls.Add($btnExit)
 
 # ===================== TASK / BOTTOM INFO PANEL =====================
@@ -599,7 +605,7 @@ $bottomPanel.Add_Paint({
 })
 
 $lblTaskTitle = New-Object System.Windows.Forms.Label
-$lblTaskTitle.Text      = "  ✦ CURRENT TASK"
+$lblTaskTitle.Text      = "  âœ¦ CURRENT TASK"
 $lblTaskTitle.Font      = New-Object System.Drawing.Font("Consolas", 7, [System.Drawing.FontStyle]::Bold)
 $lblTaskTitle.ForeColor = $ACCENT2
 $lblTaskTitle.Location  = New-Object System.Drawing.Point(6, 8)
@@ -640,11 +646,11 @@ function Set-StepActive {
             if ($id -eq $active) {
                 $stepLabels[$id].ForeColor = $ACCENT
                 $stepIcons[$id].ForeColor  = $ACCENT
-                $stepIcons[$id].Text       = "[▸]"
+                $stepIcons[$id].Text       = "[â–¸]"
             } elseif ($id -lt $active) {
                 $stepLabels[$id].ForeColor = $DARKPINK
                 $stepIcons[$id].ForeColor  = $DARKPINK
-                $stepIcons[$id].Text       = "[✓]"
+                $stepIcons[$id].Text       = "[âœ“]"
             } else {
                 $stepLabels[$id].ForeColor = $TEXTDIM
                 $stepIcons[$id].ForeColor  = $TEXTDIM
@@ -660,7 +666,7 @@ function Set-Progress {
     try {
         $progressBar.Value = [Math]::Max(0, [Math]::Min($main, 100))
         $subBar.Value      = [Math]::Max(0, [Math]::Min($sub, 100))
-        $lblProgress.Text  = "◈  PROGRESS   $main%"
+        $lblProgress.Text  = "â—ˆ  PROGRESS   $main%"
         $lblTask.Text      = if ($task) { $task } else { "" }
         $lblTask.ForeColor = $ACCENT2
         if ($mini -ne "") {
@@ -677,7 +683,7 @@ function Set-Progress {
 $btnRun.Add_Click({
     $btnRun.Enabled      = $false
     $btnRun.ForeColor    = $TEXTDIM
-    $lblStatus.Text      = "◆ RUNNING"
+    $lblStatus.Text      = "â—† RUNNING"
     $lblStatus.ForeColor = $WARN
 
     foreach ($s in $stepDefs) {
@@ -686,16 +692,16 @@ $btnRun.Add_Click({
         $stepIcons[$s.id].Text       = "[$($s.id)]"
     }
 
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "dim"
-    Write-Log "  BabyDek v2  ◈  Low Latency Optimizer" "step"
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "dim"
+    Write-Log "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" "dim"
+    Write-Log "  BabyDek v2  â—ˆ  Low Latency Optimizer" "step"
+    Write-Log "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" "dim"
     Write-Log "Started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" "hi"
 
     # STEP 1
     Set-StepActive 1
     Set-Progress 2 0 "Configuring TCP global settings..."
     Write-Log "" "dim"
-    Write-Log "STEP 1 ▸ TCP Global Settings (27 cmds)" "step"
+    Write-Log "STEP 1 â–¸ TCP Global Settings (27 cmds)" "step"
     try {
     $tcpCmds = @(
         "netsh int tcp set global rss=enabled",
@@ -731,7 +737,7 @@ $btnRun.Add_Click({
         $ci++
         Set-Progress 2 ([int]($ci / $tcpCmds.Count * 100)) "TCP: $cmd"
         try { Invoke-Expression "$cmd 2>&1" | Out-Null } catch {}
-        Write-Log "  ▸ $cmd" "ok"
+        Write-Log "  â–¸ $cmd" "ok"
         Start-Sleep -Milliseconds 30
     }
     Write-Log "STEP 1 DONE  ($($tcpCmds.Count) commands)" "ok"
@@ -742,7 +748,7 @@ $btnRun.Add_Click({
     Set-StepActive 2
     Set-Progress 17 0 "Writing Registry (Interfaces)..."
     Write-Log "" "dim"
-    Write-Log "STEP 2 ▸ Registry Interfaces" "step"
+    Write-Log "STEP 2 â–¸ Registry Interfaces" "step"
     try {
     $ifPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
     $ifVals = [ordered]@{
@@ -798,7 +804,7 @@ $btnRun.Add_Click({
     Set-StepActive 3
     Set-Progress 34 0 "Writing Registry (Parameters)..."
     Write-Log "" "dim"
-    Write-Log "STEP 3 ▸ Registry Parameters (latency focus)" "step"
+    Write-Log "STEP 3 â–¸ Registry Parameters (latency focus)" "step"
     try {
     $pPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
     $pVals = [ordered]@{
@@ -873,7 +879,7 @@ $btnRun.Add_Click({
     Set-StepActive 4
     Set-Progress 50 0 "Setting process priorities..."
     Write-Log "" "dim"
-    Write-Log "STEP 4 ▸ Process Priority (25 games)" "step"
+    Write-Log "STEP 4 â–¸ Process Priority (25 games)" "step"
     try {
     $highList = @(
         "FiveM_b2545_GTAProcess","FiveM_b2699_GTAProcess","FiveM_b2802_GTAProcess",
@@ -925,7 +931,7 @@ $btnRun.Add_Click({
     Set-StepActive 5
     Set-Progress 67 0 "Applying IRQ & power hints..."
     Write-Log "" "dim"
-    Write-Log "STEP 5 ▸ IRQ & Power hints" "step"
+    Write-Log "STEP 5 â–¸ IRQ & Power hints" "step"
 
     try {
         powercfg -setactive SCHEME_MIN 2>&1 | Out-Null
@@ -958,7 +964,7 @@ $btnRun.Add_Click({
     Set-StepActive 6
     Set-Progress 83 0 "Disabling services..."
     Write-Log "" "dim"
-    Write-Log "STEP 6 ▸ Disabling background services" "step"
+    Write-Log "STEP 6 â–¸ Disabling background services" "step"
     try {
     $svcs = @(
         @{ name="SysMain";            reason="Prefetch (wastes RAM/IO)" },
@@ -988,24 +994,24 @@ $btnRun.Add_Click({
     foreach ($s in $stepDefs) {
         $stepLabels[$s.id].ForeColor = $DARKPINK
         $stepIcons[$s.id].ForeColor  = $DARKPINK
-        $stepIcons[$s.id].Text       = "[✓]"
+        $stepIcons[$s.id].Text       = "[âœ“]"
     }
     } catch { }
 
-    $summary = "TCP (27 cmds)  ◈  Registry patched  ◈  25 games prioritized`nIRQ & power tuned  ◈  8 services disabled  ◈  Multimedia profile set"
-    Set-Progress 100 100 "ALL DONE — restart recommended" $summary
+    $summary = "TCP (27 cmds)  â—ˆ  Registry patched  â—ˆ  25 games prioritized`nIRQ & power tuned  â—ˆ  8 services disabled  â—ˆ  Multimedia profile set"
+    Set-Progress 100 100 "ALL DONE â€” restart recommended" $summary
     $lblMini.ForeColor = $ACCENT
 
     Write-Log "" "dim"
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "dim"
-    Write-Log "               ✦  COMPLETE  ✦" "ok"
-    Write-Log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "dim"
+    Write-Log "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" "dim"
+    Write-Log "               âœ¦  COMPLETE  âœ¦" "ok"
+    Write-Log "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”" "dim"
 
-    $lblStatus.Text      = "◆ COMPLETE"
+    $lblStatus.Text      = "â—† COMPLETE"
     $lblStatus.ForeColor = $ACCENT
     $btnRun.Enabled      = $true
     $btnRun.ForeColor    = $ACCENT
-    $btnRun.Text         = "▶  RUN BabyDek"
+    $btnRun.Text         = "â–¶  RUN BabyDek"
 })
 
 # ===================== CLEAR / EXIT =====================
@@ -1013,14 +1019,14 @@ $btnClear.Add_Click({
     $logBox.Clear()
     $progressBar.Value = 0
     $subBar.Value      = 0
-    $lblProgress.Text  = "◈  PROGRESS   0%"
+    $lblProgress.Text  = "â—ˆ  PROGRESS   0%"
     $lblTask.Text      = "Waiting to start..."
     $lblTask.ForeColor = $TEXTDIM
     $lblMini.Text      = ""
     $lblMini.ForeColor = $TEXTDIM
-    $lblStatus.Text      = "◆ READY"
+    $lblStatus.Text      = "â—† READY"
     $lblStatus.ForeColor = $ACCENT
-    $btnRun.Text         = "▶  RUN BabyDek"
+    $btnRun.Text         = "â–¶  RUN BabyDek"
     foreach ($s in $stepDefs) {
         $stepLabels[$s.id].ForeColor = $TEXTDIM
         $stepIcons[$s.id].ForeColor  = $TEXTDIM
@@ -1038,13 +1044,13 @@ Write-Log "CPU: $cpuInfo" "dim"
 Write-Log "RAM: $ramGB GB" "dim"
 Write-Log "" "dim"
 Write-Log "What's new in v2:" "step"
-Write-Log "  ▸ 27 TCP commands (was 16)" "ok"
-Write-Log "  ▸ Nagle disabled, ACK immediate" "ok"
-Write-Log "  ▸ 25 games in priority list (was 9)" "ok"
-Write-Log "  ▸ New: Step 5 IRQ + power tuning" "ok"
-Write-Log "  ▸ Multimedia game profile patched" "ok"
-Write-Log "  ▸ NetworkThrottlingIndex disabled" "ok"
-Write-Log "  ▸ 8 services disabled (was 4)" "ok"
+Write-Log "  â–¸ 27 TCP commands (was 16)" "ok"
+Write-Log "  â–¸ Nagle disabled, ACK immediate" "ok"
+Write-Log "  â–¸ 25 games in priority list (was 9)" "ok"
+Write-Log "  â–¸ New: Step 5 IRQ + power tuning" "ok"
+Write-Log "  â–¸ Multimedia game profile patched" "ok"
+Write-Log "  â–¸ NetworkThrottlingIndex disabled" "ok"
+Write-Log "  â–¸ 8 services disabled (was 4)" "ok"
 Write-Log "" "dim"
 Write-Log "Press [ RUN BabyDek ] to start." "ok"
 
@@ -1056,6 +1062,6 @@ try {
     Write-Host $_.ScriptStackTrace -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
 }
-Write-Host "🚀 BabyDek Optimizer เริ่มทำงาน" -ForegroundColor Cyan
+Write-Host "ðŸš€ BabyDek Optimizer à¹€à¸£à¸´à¹ˆà¸¡à¸—à¸³à¸‡à¸²à¸™" -ForegroundColor Cyan
 
 [System.Windows.Forms.Application]::Run($form)
