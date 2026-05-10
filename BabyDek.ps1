@@ -2,7 +2,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ===================== CONFIG =====================
-$KEY_SERVER_URL = "https://api-production-219.up.railway.app/api/verify"
+$KEY_SERVER_URL = "https://api-production-2119.up.railway.app/api/verify"
 
 # ===================== HWID =====================
 function Get-HWID {
