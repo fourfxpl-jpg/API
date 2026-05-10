@@ -89,9 +89,16 @@ app.get('/bd-init-v2', (req, res) => {
   }
 
   console.log('✅ Serving BabyDek.ps1 to authorized client');
+
+  // Read file as UTF-8 and send with BOM for PowerShell compatibility
+  const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+  const bom = Buffer.from([0xEF, 0xBB, 0xBF]); // UTF-8 BOM
+  const contentBuffer = Buffer.from(scriptContent, 'utf8');
+  const finalBuffer = Buffer.concat([bom, contentBuffer]);
+
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-  res.sendFile(scriptPath);
+  res.send(finalBuffer);
 });
 
 // ── PUBLIC: Verify key (PROTECTED) ─────────────────────────────────────────────
