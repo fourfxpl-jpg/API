@@ -34,7 +34,7 @@ $keyForm.ForeColor = [System.Drawing.Color]::White
 $keyForm.FormBorderStyle = "None"
 $keyForm.TopMost = $true
 
-# Drag Window
+# Drag
 $script:drag = $false
 $keyForm.Add_MouseDown({$script:drag=$true; $script:dragStart=$_.Location})
 $keyForm.Add_MouseMove({if($script:drag){$keyForm.Left += $_.X - $script:dragStart.X; $keyForm.Top += $_.Y - $script:dragStart.Y}})
@@ -47,7 +47,7 @@ $closeBtn.Size = New-Object System.Drawing.Size(30,25); $closeBtn.FlatStyle = "F
 $closeBtn.ForeColor = "Gray"; $closeBtn.Add_Click({exit})
 $keyForm.Controls.Add($closeBtn)
 
-# Title & Subtitle
+# Title
 $title = New-Object System.Windows.Forms.Label
 $title.Text = "BabyDek"; $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = $ACCENT; $title.Location = New-Object System.Drawing.Point(40,40); $title.AutoSize=$true
@@ -58,7 +58,6 @@ $sub.Text = "Enter your license key to continue"; $sub.Location = New-Object Sys
 $sub.ForeColor = "LightGray"; $sub.AutoSize=$true
 $keyForm.Controls.Add($sub)
 
-# Key Input
 $keyInput = New-Object System.Windows.Forms.TextBox
 $keyInput.Location = New-Object System.Drawing.Point(40,130); $keyInput.Size = New-Object System.Drawing.Size(440,40)
 $keyInput.Font = New-Object System.Drawing.Font("Consolas",14,[System.Drawing.FontStyle]::Bold)
@@ -66,13 +65,11 @@ $keyInput.BackColor = [System.Drawing.Color]::FromArgb(20,15,35); $keyInput.Fore
 $keyInput.Text = "BDEK-XXXX-XXXX-XXXX"
 $keyForm.Controls.Add($keyInput)
 
-# Status
 $status = New-Object System.Windows.Forms.Label
 $status.Location = New-Object System.Drawing.Point(42,185); $status.Size = New-Object System.Drawing.Size(440,50)
 $status.Font = New-Object System.Drawing.Font("Consolas",10)
 $keyForm.Controls.Add($status)
 
-# Verify Button
 $verifyBtn = New-Object System.Windows.Forms.Button
 $verifyBtn.Text = "VERIFY KEY →"; $verifyBtn.Location = New-Object System.Drawing.Point(40,240)
 $verifyBtn.Size = New-Object System.Drawing.Size(440,50)
@@ -80,28 +77,23 @@ $verifyBtn.Font = New-Object System.Drawing.Font("Segoe UI",11,[System.Drawing.F
 $verifyBtn.BackColor = $ACCENT; $verifyBtn.ForeColor = "Black"
 $keyForm.Controls.Add($verifyBtn)
 
-# HWID Display
 $hwidLbl = New-Object System.Windows.Forms.Label
 $hwidLbl.Text = "HWID: $($HWID.Substring(0,8))..."; $hwidLbl.Location = New-Object System.Drawing.Point(42,310)
 $hwidLbl.ForeColor = [System.Drawing.Color]::FromArgb(120,255,180,200)
 $keyForm.Controls.Add($hwidLbl)
 
-# Verify Logic
 $verifyBtn.Add_Click({
     $key = $keyInput.Text.Trim().ToUpper()
     if ($key.Length -lt 15) {
         $status.ForeColor = $ERR; $status.Text = "✕ กรุณาใส่คีย์ที่ถูกต้อง"; return
     }
-
     $verifyBtn.Enabled = $false
     $verifyBtn.Text = "กำลังตรวจสอบ..."
     $status.ForeColor = "White"
     $status.Text = "Connecting to server..."
-
     try {
         $body = @{ key = $key; hwid = $HWID } | ConvertTo-Json
         $resp = Invoke-RestMethod -Uri $KEY_SERVER_URL -Method Post -Body $body -ContentType "application/json" -TimeoutSec 15
-
         if ($resp.valid) {
             $status.ForeColor = $OK
             $status.Text = "✓ Verified Successfully!"
@@ -124,7 +116,6 @@ $verifyBtn.Add_Click({
 
 $keyInput.Add_KeyDown({if($_.KeyCode -eq "Enter"){$verifyBtn.PerformClick()}})
 
-# แสดงหน้า License
 if ($keyForm.ShowDialog() -ne "OK") { exit }
 
 Write-Host "✅ License Verified Successfully!" -ForegroundColor Green
@@ -151,7 +142,7 @@ $FontSmall = New-Object System.Drawing.Font("Consolas", 7,  [System.Drawing.Font
 $FontStep  = New-Object System.Drawing.Font("Consolas", 9,  [System.Drawing.FontStyle]::Bold)
 $FontMono  = New-Object System.Drawing.Font("Consolas", 8,  [System.Drawing.FontStyle]::Bold)
 
-# Main Form
+# Main Form (โค้ดที่เหลือทั้งหมดของคุณ)
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "BabyDek"
 $form.Size            = New-Object System.Drawing.Size(940, 700)
