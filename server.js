@@ -4,7 +4,7 @@ const fs      = require('fs');
 const path    = require('path');
 
 const app  = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const DB   = path.join(__dirname, 'keys.json');
 
 function loadDB() {
