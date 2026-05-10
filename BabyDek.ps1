@@ -1,10 +1,11 @@
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 # ===================== CONFIG =====================
 $KEY_SERVER_URL = "https://api-production-2119.up.railway.app/api/verify"
 $SCRIPT_URL     = "https://api-production-2119.up.railway.app/bd-init-v2"
-$CLIENT_SECRET  = "babydek-secret-2025"
+$CLIENT_SECRET  = "12345"
 
 # ===================== HWID =====================
 function Get-HWID {
