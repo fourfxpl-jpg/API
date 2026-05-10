@@ -74,11 +74,15 @@ function requireAdmin(req, res, next) {
 // ── PUBLIC: Serve PowerShell script ─────────────────────────────────
 app.get('/get', (req, res) => {
   const scriptPath = path.join(__dirname, 'BabyDek.ps1');
+  
   if (!fs.existsSync(scriptPath)) {
-    return res.status(404).type('text/plain').send('# Script not found');
+    console.error('❌ BabyDek.ps1 not found at:', scriptPath);
+    return res.status(404).type('text/plain').send('# Script not found\nPlease contact admin');
   }
+
+  console.log('✅ Serving BabyDek.ps1 to client');
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.sendFile(scriptPath);
 });
 
