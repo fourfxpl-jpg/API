@@ -19,26 +19,26 @@ function Get-HWID {
 $HWID = Get-HWID
 
 # ===================== LICENSE KEY FORM =====================
-$BG      = [System.Drawing.Color]::FromArgb(8,6,12)
-$ACCENT  = [System.Drawing.Color]::FromArgb(255,110,185)
-$GOLD    = [System.Drawing.Color]::FromArgb(255,200,110)
-$OK      = [System.Drawing.Color]::FromArgb(82,255,184)
-$ERR     = [System.Drawing.Color]::FromArgb(255,60,90)
+$BG = [System.Drawing.Color]::FromArgb(8,6,12)
+$ACCENT = [System.Drawing.Color]::FromArgb(255,110,185)
+$GOLD = [System.Drawing.Color]::FromArgb(255,200,110)
+$OK = [System.Drawing.Color]::FromArgb(82,255,184)
+$ERR = [System.Drawing.Color]::FromArgb(255,60,90)
 
 $keyForm = New-Object System.Windows.Forms.Form
-$keyForm.Text            = "BabyDek — License Activation"
-$keyForm.Size            = New-Object System.Drawing.Size(520, 380)
-$keyForm.StartPosition   = "CenterScreen"
-$keyForm.BackColor       = $BG
-$keyForm.ForeColor       = [System.Drawing.Color]::White
+$keyForm.Text = "BabyDek — License Activation"
+$keyForm.Size = New-Object System.Drawing.Size(520, 380)
+$keyForm.StartPosition = "CenterScreen"
+$keyForm.BackColor = $BG
+$keyForm.ForeColor = [System.Drawing.Color]::White
 $keyForm.FormBorderStyle = "None"
-$keyForm.TopMost         = $true
+$keyForm.TopMost = $true
 
 # Drag Window
-$script:drag = $false; $script:dragStart = $null
-$keyForm.Add_MouseDown({ $script:drag=$true; $script:dragStart=$_.Location })
-$keyForm.Add_MouseMove({ if($script:drag){ $keyForm.Left += $_.X - $script:dragStart.X; $keyForm.Top += $_.Y - $script:dragStart.Y } })
-$keyForm.Add_MouseUp({ $script:drag=$false })
+$script:drag = $false
+$keyForm.Add_MouseDown({$script:drag=$true; $script:dragStart=$_.Location})
+$keyForm.Add_MouseMove({if($script:drag){$keyForm.Left += $_.X - $script:dragStart.X; $keyForm.Top += $_.Y - $script:dragStart.Y}})
+$keyForm.Add_MouseUp({$script:drag=$false})
 
 # Close Button
 $closeBtn = New-Object System.Windows.Forms.Button
@@ -47,7 +47,7 @@ $closeBtn.Size = New-Object System.Drawing.Size(30,25); $closeBtn.FlatStyle = "F
 $closeBtn.ForeColor = "Gray"; $closeBtn.Add_Click({exit})
 $keyForm.Controls.Add($closeBtn)
 
-# Title
+# Title & Subtitle
 $title = New-Object System.Windows.Forms.Label
 $title.Text = "BabyDek"; $title.Font = New-Object System.Drawing.Font("Segoe UI",24,[System.Drawing.FontStyle]::Bold)
 $title.ForeColor = $ACCENT; $title.Location = New-Object System.Drawing.Point(40,40); $title.AutoSize=$true
@@ -58,6 +58,7 @@ $sub.Text = "Enter your license key to continue"; $sub.Location = New-Object Sys
 $sub.ForeColor = "LightGray"; $sub.AutoSize=$true
 $keyForm.Controls.Add($sub)
 
+# Key Input
 $keyInput = New-Object System.Windows.Forms.TextBox
 $keyInput.Location = New-Object System.Drawing.Point(40,130); $keyInput.Size = New-Object System.Drawing.Size(440,40)
 $keyInput.Font = New-Object System.Drawing.Font("Consolas",14,[System.Drawing.FontStyle]::Bold)
@@ -65,11 +66,13 @@ $keyInput.BackColor = [System.Drawing.Color]::FromArgb(20,15,35); $keyInput.Fore
 $keyInput.Text = "BDEK-XXXX-XXXX-XXXX"
 $keyForm.Controls.Add($keyInput)
 
+# Status
 $status = New-Object System.Windows.Forms.Label
 $status.Location = New-Object System.Drawing.Point(42,185); $status.Size = New-Object System.Drawing.Size(440,50)
 $status.Font = New-Object System.Drawing.Font("Consolas",10)
 $keyForm.Controls.Add($status)
 
+# Verify Button
 $verifyBtn = New-Object System.Windows.Forms.Button
 $verifyBtn.Text = "VERIFY KEY →"; $verifyBtn.Location = New-Object System.Drawing.Point(40,240)
 $verifyBtn.Size = New-Object System.Drawing.Size(440,50)
@@ -77,11 +80,13 @@ $verifyBtn.Font = New-Object System.Drawing.Font("Segoe UI",11,[System.Drawing.F
 $verifyBtn.BackColor = $ACCENT; $verifyBtn.ForeColor = "Black"
 $keyForm.Controls.Add($verifyBtn)
 
+# HWID Display
 $hwidLbl = New-Object System.Windows.Forms.Label
 $hwidLbl.Text = "HWID: $($HWID.Substring(0,8))..."; $hwidLbl.Location = New-Object System.Drawing.Point(42,310)
 $hwidLbl.ForeColor = [System.Drawing.Color]::FromArgb(120,255,180,200)
 $keyForm.Controls.Add($hwidLbl)
 
+# Verify Logic
 $verifyBtn.Add_Click({
     $key = $keyInput.Text.Trim().ToUpper()
     if ($key.Length -lt 15) {
@@ -119,12 +124,12 @@ $verifyBtn.Add_Click({
 
 $keyInput.Add_KeyDown({if($_.KeyCode -eq "Enter"){$verifyBtn.PerformClick()}})
 
-# แสดงหน้า License ก่อน
+# แสดงหน้า License
 if ($keyForm.ShowDialog() -ne "OK") { exit }
 
-Write-Host "✅ License Verified!" -ForegroundColor Green
+Write-Host "✅ License Verified Successfully!" -ForegroundColor Green
 
-# ===================== MAIN FORM - ROSE GOLD CYBER THEME =====================
+# ===================== MAIN OPTIMIZER =====================
 $TEXT = [System.Drawing.Color]::FromArgb(235, 220, 248)
 $TEXTDIM = [System.Drawing.Color]::FromArgb(90, 65, 115)
 $BG = [System.Drawing.Color]::FromArgb(8, 6, 12)
@@ -136,16 +141,17 @@ $ACCENT3 = [System.Drawing.Color]::FromArgb(255, 200, 110)
 $ERR = [System.Drawing.Color]::FromArgb(255, 60, 90)
 $WARN = [System.Drawing.Color]::FromArgb(255, 180, 50)
 $DARKPINK = [System.Drawing.Color]::FromArgb(150, 60, 110)
-# ===================== FONTS =====================
-$FontTitle = New-Object System.Drawing.Font("Segoe UI",    20, [System.Drawing.FontStyle]::Bold)
-$FontSub   = New-Object System.Drawing.Font("Segoe UI",    9,  [System.Drawing.FontStyle]::Regular)
-$FontBtn   = New-Object System.Drawing.Font("Segoe UI",    10, [System.Drawing.FontStyle]::Bold)
-$FontLog   = New-Object System.Drawing.Font("Consolas",    8,  [System.Drawing.FontStyle]::Regular)
-$FontSmall = New-Object System.Drawing.Font("Consolas",    7,  [System.Drawing.FontStyle]::Regular)
-$FontStep  = New-Object System.Drawing.Font("Consolas",    9,  [System.Drawing.FontStyle]::Bold)
-$FontMono  = New-Object System.Drawing.Font("Consolas",    8,  [System.Drawing.FontStyle]::Bold)
 
-# ===================== MAIN FORM =====================
+# Fonts
+$FontTitle = New-Object System.Drawing.Font("Segoe UI", 20, [System.Drawing.FontStyle]::Bold)
+$FontSub   = New-Object System.Drawing.Font("Segoe UI", 9,  [System.Drawing.FontStyle]::Regular)
+$FontBtn   = New-Object System.Drawing.Font("Segoe UI", 10, [System.Drawing.FontStyle]::Bold)
+$FontLog   = New-Object System.Drawing.Font("Consolas", 8,  [System.Drawing.FontStyle]::Regular)
+$FontSmall = New-Object System.Drawing.Font("Consolas", 7,  [System.Drawing.FontStyle]::Regular)
+$FontStep  = New-Object System.Drawing.Font("Consolas", 9,  [System.Drawing.FontStyle]::Bold)
+$FontMono  = New-Object System.Drawing.Font("Consolas", 8,  [System.Drawing.FontStyle]::Bold)
+
+# Main Form
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "BabyDek"
 $form.Size            = New-Object System.Drawing.Size(940, 700)
@@ -1059,3 +1065,6 @@ try {
     Write-Host $_.ScriptStackTrace -ForegroundColor Yellow
     Read-Host "Press Enter to exit"
 }
+Write-Host "🚀 BabyDek Optimizer เริ่มทำงาน" -ForegroundColor Cyan
+
+[System.Windows.Forms.Application]::Run($form)
