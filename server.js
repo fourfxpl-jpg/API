@@ -65,7 +65,6 @@ async function getDB() {
 
 // ── Middleware ────────────────────────────────────────────────
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 function secureEquals(a, b) {
   if (!a || !b) return false;
@@ -154,6 +153,28 @@ function requireClientSecret(req, res, next) {
   }
   next();
 }
+
+function requireAdminPage(req, res, next) {
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (!ADMIN_TOKEN || !secureEquals(token, ADMIN_TOKEN)) {
+    return res.status(404).type('text/plain').send('Not Found');
+  }
+  next();
+}
+
+app.get('/admin', requireAdminPage, (req, res) => {
+  const token = encodeURIComponent(req.query.token || '');
+  if (!token) {
+    return res.status(404).type('text/plain').send('Not Found');
+  }
+  return res.redirect(`/admin.html?token=${token}`);
+});
+
+app.get('/admin.html', requireAdminPage, (req, res) => {
+  return res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ── PUBLIC: Serve PowerShell script (PROTECTED) ─────────────────────────────────
 app.get('/bd-init-v2', (req, res) => {
